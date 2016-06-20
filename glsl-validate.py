@@ -60,8 +60,9 @@ def load_shader(shader_file):
 
 
 def create_tmp_file(shader_file):
-    extension = os.path.splitext(shader_file)[1]
-    tmp_file_name = "tmp%s" % extension
+    (filepath,extension) = os.path.splitext(shader_file)
+    filename = os.path.split(filepath)[1]
+    tmp_file_name = "tmp_%s" % filename + extension
 
     # Load in actual shader
     (shader, line_labels) = load_shader(shader_file)

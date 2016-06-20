@@ -116,15 +116,26 @@ def shader_info(shader_file):
 
 def validate_shader(shader_file):
     (tmp_file_name, line_labels) = create_tmp_file(shader_file)
-    p = subprocess.Popen([ESSL_TO_GLSL, "-s=w", "-x=d",
-                          os.path.join(DIR, tmp_file_name)],
+    essl_arguments = "-s=w -x=d"
+    if platform.system() == 'Windows':
+        essl_arguments += " -b=h"
+    essl_command = ESSL_TO_GLSL + " " + essl_arguments + " " + os.path.join(DIR, tmp_file_name)
+    p = subprocess.Popen(essl_command,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)
     ret_code = p.wait()
     os.remove(os.path.join(DIR, tmp_file_name))
 
-    if ret_code != 0:
-        raw_errors = p.stdout.readlines()[1:-4]
+    lines = []
+    if p.stdout != None:
+        lines = p.stdout.readlines()
+
+    raw_errors = []
+    if len(lines) > 0:
+        raw_errors = lines[1:-4]
+
+    if ret_code != 0 and len(raw_errors) > 0:
+        raw_errors = lines[1:-4]
 
         # Write out formatted errors
         error = ""
@@ -136,8 +147,10 @@ def validate_shader(shader_file):
             error_message = details.group(2)
             error_format = grey("%s ") + "%s\n"
             error += error_format % (line_label, error_message)
-        print error
-        exit(1)
+
+        if len(error) > 0:
+            print error
+            exit(1)
 
 
 def standalone():

@@ -9,11 +9,11 @@ DIR = os.path.dirname(os.path.realpath(__file__))
 
 # Select the correct essl_to_glsl executable for this platform
 if platform.system() == 'Darwin':
-    ESSL_TO_GLSL = os.path.join(DIR, "angle/essl_to_glsl_osx")
+    ESSL_TO_GLSL = os.path.join(DIR, "angle", "essl_to_glsl_osx")
 elif platform.system() == 'Linux':
-    ESSL_TO_GLSL = os.path.join(DIR, "angle/essl_to_glsl_linux")
+    ESSL_TO_GLSL = os.path.join(DIR, "angle", "essl_to_glsl_linux")
 elif platform.system() == 'Windows':
-    ESSL_TO_GLSL = os.path.join(DIR, "angle/essl_to_glsl_win.exe")
+    ESSL_TO_GLSL = os.path.join(DIR, "angle", "essl_to_glsl_win.exe")
 else:
     print "Unsupported platform"
     exit(1)

@@ -28,9 +28,6 @@ def color(s, color):
     else:
         return s
 
-def grey(s):
-    return color(s, 30)
-
 def load_shader(shader_file):
     output = ""
     # Keep track of line numbers, #including will result in some corresponding to other files
@@ -89,7 +86,7 @@ def validate_shader(shader_file):
             line_number = int(details.group(1))
             line_label = line_labels[line_number-1]
             error_message = details.group(2)
-            error_format = grey("%s ") + "%s\n"
+            error_format = color("%s:: ", 33) + "%s\n"
             error += error_format % (line_label, error_message)
         print error
         exit(1)

@@ -122,7 +122,11 @@ def validate_shader(shader_file, prefix_files=[]):
     essl_arguments = "-s=w -x=d"
     if platform.system() == 'Windows':
         essl_arguments += " -b=h"
+
     essl_command = [ESSL_TO_GLSL, essl_arguments, os.path.join(DIR, tmp_file_name)]
+    if platform.system() == "Windows":
+        essl_command = " ".join(essl_command)
+
     p = subprocess.Popen(essl_command,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)

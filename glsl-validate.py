@@ -144,17 +144,17 @@ def validate_shader(shader_file, prefix_files=None):
         error = ""
         for e in raw_errors:
             # Error format is: 'ERROR: 0:<line number>: <error message>
-            details = re.match("ERROR: 0:(\d+): (.*)", e)
-            line_number = int(details.group(1))
-            line_label = line_labels[line_number-1]
-            error_message = details.group(2)
-            error_format = color("%s:: ", 33) + "%s\n"
-            error += error_format % (line_label, error_message)
+            details = re.match("(?:ERROR|WARNING): 0:(\d+): (.*)", e)
+            if details:
+                line_number = int(details.group(1))
+                line_label = line_labels[line_number-1]
+                error_message = details.group(2)
+                error_format = color("%s:: ", 33) + "%s\n"
+                error += error_format % (line_label, error_message)
 
         if len(error) > 0:
             print error
             exit(1)
-
 
 def standalone():
     parser = argparse.ArgumentParser(description='Validate three.js shaders')

@@ -57,7 +57,7 @@ def load_shader(shader_file):
     return (output, line_labels)
 
 
-def create_tmp_file(shader_file, prefix_files=None):
+def create_tmp_file(shader_file, prefix_files=[]):
     (filepath, extension) = os.path.splitext(shader_file)
     filename = os.path.split(filepath)[1]
     tmp_file_name = "tmp_%s" % filename + extension
@@ -66,7 +66,7 @@ def create_tmp_file(shader_file, prefix_files=None):
     (shader, line_labels) = load_shader(shader_file)
 
     prefix_shader_file = None
-    if prefix_files:
+    if len(prefix_files) > 0:
         prefix_shader_file = next((f for f in prefix_files if re.search("prefix%s" % extension, f, re.IGNORECASE)), None)
 
     # Check if marked as RawShader
@@ -84,13 +84,13 @@ def create_tmp_file(shader_file, prefix_files=None):
     return (tmp_file_name, line_labels)
 
 
-def shader_info(shader_file, prefix_files=None):
+def shader_info(shader_file, prefix_files=[]):
     extension = os.path.splitext(shader_file)[1]
     if extension == ".vert":
         profile = "gpu_vp"
     else:
         profile = "gpu_fp"
-    (tmp_file_name, line_labels) = create_tmp_file(shader_file)
+    (tmp_file_name, line_labels) = create_tmp_file(shader_file, prefix_files)
     # Run essl_to_glsl over the shader, reporting any errors
     p = subprocess.Popen([CGC, "-oglsl", "-strict", "-glslWerror", "-profile",
                           profile, os.path.join(DIR, tmp_file_name)],
@@ -117,7 +117,7 @@ def shader_info(shader_file, prefix_files=None):
             print line
 
 
-def validate_shader(shader_file, prefix_files=None):
+def validate_shader(shader_file, prefix_files=[]):
     (tmp_file_name, line_labels) = create_tmp_file(shader_file, prefix_files)
     essl_arguments = "-s=w -x=d"
     if platform.system() == 'Windows':
@@ -182,12 +182,13 @@ def standalone():
         print "Invalid file: %s, only support .frag and .vert files" % f
         exit(1)
 
+    shader_files = []
+    prefix_files = []
     if not args.raw:
-        prefix_files = [f for f in files if re.search("prefix\.(vert|frag)$", f, re.IGNORECASE)]
-        shader_files = [f for f in files if not re.search("prefix\.(vert|frag)$", f, re.IGNORECASE)]
+        [prefix_files.append(f) for f in files if re.search("prefix\.(vert|frag)$", f, re.IGNORECASE) and f not in prefix_files]
+        [shader_files.append(f) for f in files if not re.search("prefix\.(vert|frag)$", f, re.IGNORECASE) and f not in shader_files]
     else:
         shader_files = files
-        prefix_files = None
 
     map(lambda f: validate_shader(f, prefix_files), shader_files)
     if args.compile:

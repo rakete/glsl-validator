@@ -57,18 +57,23 @@ def load_shader(shader_file):
     return (output, line_labels)
 
 
-def create_tmp_file(shader_file):
-    (filepath,extension) = os.path.splitext(shader_file)
+def create_tmp_file(shader_file, prefix_files=None):
+    (filepath, extension) = os.path.splitext(shader_file)
     filename = os.path.split(filepath)[1]
     tmp_file_name = "tmp_%s" % filename + extension
 
     # Load in actual shader
     (shader, line_labels) = load_shader(shader_file)
 
+    prefix_shader_file = None
+    if prefix_files:
+        prefix_shader_file = next((f for f in prefix_files if re.search("prefix%s" % extension, f, re.IGNORECASE)), None)
+
     # Check if marked as RawShader
     if not args.raw and "RawShader" not in shader:
         # Prepend the prefix shader unless we are in raw mode
-        prefix_shader_file = os.path.join(DIR, "prefix/prefix%s" % extension)
+        if prefix_shader_file is None:
+            prefix_shader_file = os.path.join(DIR, "prefix/prefix%s" % extension)
         (prefix_shader, prefix_line_labels) = load_shader(prefix_shader_file)
         shader = prefix_shader + shader
         line_labels = prefix_line_labels + line_labels
@@ -79,7 +84,7 @@ def create_tmp_file(shader_file):
     return (tmp_file_name, line_labels)
 
 
-def shader_info(shader_file):
+def shader_info(shader_file, prefix_files=None):
     extension = os.path.splitext(shader_file)[1]
     if extension == ".vert":
         profile = "gpu_vp"
@@ -112,12 +117,12 @@ def shader_info(shader_file):
             print line
 
 
-def validate_shader(shader_file):
-    (tmp_file_name, line_labels) = create_tmp_file(shader_file)
+def validate_shader(shader_file, prefix_files=None):
+    (tmp_file_name, line_labels) = create_tmp_file(shader_file, prefix_files)
     essl_arguments = "-s=w -x=d"
     if platform.system() == 'Windows':
         essl_arguments += " -b=h"
-    essl_command = ESSL_TO_GLSL + " " + essl_arguments + " " + os.path.join(DIR, tmp_file_name)
+    essl_command = [ESSL_TO_GLSL, essl_arguments, os.path.join(DIR, tmp_file_name)]
     p = subprocess.Popen(essl_command,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)
@@ -125,7 +130,7 @@ def validate_shader(shader_file):
     os.remove(os.path.join(DIR, tmp_file_name))
 
     lines = []
-    if p.stdout != None:
+    if p.stdout is not None:
         lines = p.stdout.readlines()
 
     raw_errors = []
@@ -177,9 +182,16 @@ def standalone():
         print "Invalid file: %s, only support .frag and .vert files" % f
         exit(1)
 
-    map(validate_shader, files)
+    if not args.raw:
+        prefix_files = [f for f in files if re.search("prefix\.(vert|frag)$", f, re.IGNORECASE)]
+        shader_files = [f for f in files if not re.search("prefix\.(vert|frag)$", f, re.IGNORECASE)]
+    else:
+        shader_files = files
+        prefix_files = None
+
+    map(lambda f: validate_shader(f, prefix_files), shader_files)
     if args.compile:
-        map(shader_info, files)
+        map(lambda f: shader_info(f, prefix_files), shader_files)
 
     if args.write:
         for f in files:

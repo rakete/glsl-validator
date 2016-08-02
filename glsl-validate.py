@@ -23,7 +23,6 @@ CGC = os.path.join(DIR, "cgc")
 
 args = {}
 
-
 # Color terminal output
 def color(s, color):
     if args.color:
@@ -153,7 +152,7 @@ def validate_shader(shader_file, prefix_files=[]):
                 line_number = int(details.group(1))
                 line_label = line_labels[line_number-1]
                 error_message = details.group(2)
-                error_format = color("%s:: ", 33) + "%s\n"
+                error_format = grey("%s:: ") + "%s\n"
                 error += error_format % (line_label, error_message)
 
         if len(error) > 0:
@@ -170,7 +169,7 @@ def standalone():
                         help='Color output')
     parser.add_argument('--raw', dest='raw', action='store_true',
                         help='Do not prepend standard THREE.js prefix block')
-    parser.add_argument('--write', dest='write', action='store_true',
+    parser.add_argument('--write', dest='write', action='store', nargs='?', default=False,
                         help='Write out to file.full.ext')
     parser.add_argument('--compile', dest='compile', action='store_true',
                         help='Print number of instructions according to cgc')
@@ -198,11 +197,14 @@ def standalone():
     if args.compile:
         map(lambda f: shader_info(f, prefix_files), shader_files)
 
-    if args.write:
+    if args.write or args.write is None:
         for f in files:
             dest_name = f.split('.')
             dest_name.insert(-1, 'full')
             dest_name = ".".join(dest_name)
+            if args.write and os.path.isdir(args.write):
+                (dest_dir, dest_filename) = os.path.split(dest_name)
+                dest_name = os.path.join(args.write, dest_filename)
             with open(dest_name, 'w') as out:
                 (shader, lines) = load_shader(f)
                 out.write(shader)
